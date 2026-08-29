@@ -1,6 +1,7 @@
 ﻿using HotelBooking.Domain.Common;
 using HotelBooking.Infrastructure.Data;
 using HotelBooking.Infrastructure.DataSeeding;
+using HotelBooking.Infrastructure.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,14 +12,16 @@ namespace HotelBooking.Infrastructure
     {
         public static IServiceCollection AddInfastructureServices(this IServiceCollection services, IConfiguration configration) 
         {
+            var concurrencyInterceptor = new ConcurrencyConflictInterceptor();
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlServer(configration.GetConnectionString("DefaultConnection"))
-                        .EnableSensitiveDataLogging();
+                        .EnableSensitiveDataLogging()
+                        .AddInterceptors(concurrencyInterceptor);
             });
 
             services.AddKeyedScoped<IDataSeeder, HotelDataSeeder>("hotel");
-            return services;    
+            return services;
         }
     }
 }

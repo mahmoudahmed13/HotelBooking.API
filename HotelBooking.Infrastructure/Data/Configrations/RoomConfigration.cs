@@ -17,7 +17,9 @@ namespace HotelBooking.Infrastructure.Data.Configrations
 
             // Unique per hotel, not globally - "Room 101" can exist in two different hotels.
             builder.HasIndex(r => new { r.HotelId, r.RoomNumber }).IsUnique();
-                           
+
+            builder.Property(r => r.RowVersion).IsRowVersion();
+
         }
     }
 }
