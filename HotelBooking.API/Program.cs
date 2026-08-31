@@ -16,7 +16,7 @@ builder.Services.AddInfastructureServices(builder.Configuration);
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
-app.UseExceptionHandler();
+app.UseExceptionHandler();  
 
 using var scope = app.Services.CreateScope();
 var seeder = scope.ServiceProvider.GetRequiredKeyedService<IDataSeeder>("hotel");

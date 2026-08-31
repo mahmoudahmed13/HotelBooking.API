@@ -24,9 +24,9 @@ namespace HotelBooking_ArchitectureTests
             var result = Types.InAssembly(DomainAssembly)
                 .ShouldNot()
                 .HaveDependencyOnAny(
-                "HotelReservation.UseCases",
-                "HotelReservation.API",
-                "HotelReservation.Infrastructure")
+                "HotelBooking.UseCases",
+                "HotelBooking.API",
+                "HotelBooking.Infrastructure")
                 .GetResult();
 
             result.IsSuccessful.ShouldBeTrue(FormatFailingTypes(result));
@@ -47,18 +47,29 @@ namespace HotelBooking_ArchitectureTests
         {
             var result = Types.InAssembly(ApplicationAssembly)
                .ShouldNot()
-               .HaveDependencyOnAny("HotelReservation.API",
-                "HotelReservation.Infrastructure")
+               .HaveDependencyOnAny("HotelBooking.API",
+                "HotelBooking.Infrastructure")
                .GetResult();
 
             result.IsSuccessful.ShouldBeTrue(FormatFailingTypes(result));
         }
         [Fact]
-        public void API_Should_Not_Depend_On_Domain()
+        public void API_Should_Not_Depend_On_Domain_Entities_Or_Repositories()
         {
+            // API is allowed to reference HotelBooking.Domain.Common (Result,
+            // Error, ErrorType) - that's the shared "envelope" every layer's
+            // methods return, not domain logic. What API must never touch
+            // directly is Entities, Repositories, Services, or ValueObjects -
+            // those stay behind UseCases (MediatR handlers + DTOs).
             var result = Types.InAssembly(ApiAssembly)
-               .ShouldNot()
-               .HaveDependencyOnAny("HotelBooking.Domain")
+               .That()
+               .DoNotResideInNamespace("HotelBooking.Domain.Common")
+               .Should()
+               .NotHaveDependencyOnAny(
+                    "HotelBooking.Domain.Entities",
+                    "HotelBooking.Domain.Repositories",
+                    "HotelBooking.Domain.Services",
+                    "HotelBooking.Domain.ValueObjects")
                .GetResult();
 
             result.IsSuccessful.ShouldBeTrue(FormatFailingTypes(result));
@@ -73,14 +84,4 @@ namespace HotelBooking_ArchitectureTests
             return "Failing types: " + string.Join(", ", names);
         }
     }
-
-
-
-
-
-
-
-
-
-
 }
