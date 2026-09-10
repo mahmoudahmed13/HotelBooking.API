@@ -13,12 +13,12 @@ namespace HotelBooking.UseCases.Profiles
             config.NewConfig<Room, GetAllRoomsResponse>()
                 .Map(dest => dest.RoomType, src => src.RoomType.ToString())
                 .Map(dest => dest.Hotel, src => src.Hotel.Name)
-                .Map(dest => dest.ReservationRooms, src => src.ReservationRooms);
+                .Map(dest => dest.ReservationRooms, src => src.ReservationRooms.ToList());
 
             config.NewConfig<Room, GetRoomByIdResponse>()
                 .Map(dest => dest.RoomType, src => src.RoomType.ToString())
                 .Map(dest => dest.Hotel, src => src.Hotel.Name)
-                .Map(dest => dest.ReservationRooms, src => src.ReservationRooms);
+                .Map(dest => dest.ReservationRooms, src => src.ReservationRooms.ToList());
         }
     }
 }

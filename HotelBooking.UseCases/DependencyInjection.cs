@@ -19,13 +19,9 @@ namespace HotelBooking.UseCases
             services.AddSingleton(config);
             services.AddScoped<IMapper, ServiceMapper>();
 
-            services.AddScoped<GetAllHotelQuery>();
-            services.AddScoped<GetHotelByIdQuery>();
-            services.AddScoped<GetAllRoomsQuery>();
-            services.AddScoped<GetRoomByIdQuery>();
-            services.AddScoped<GetAllReservationsQuery>();
-            services.AddScoped<GetReservationByIdQuery>();
-            services.AddScoped<GetAllReservationRoomsQuery>();
+            
+            // UseCases/DependencyInjection.cs
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
             return services;
         }
     }

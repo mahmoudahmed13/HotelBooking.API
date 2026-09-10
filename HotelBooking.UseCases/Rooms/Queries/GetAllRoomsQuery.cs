@@ -1,14 +1,9 @@
 ﻿using HotelBooking.Domain.Common;
 using HotelBooking.UseCases.Rooms.DTOs;
+using MediatR;
 
 namespace HotelBooking.UseCases.Rooms.Queries
 {
-    public class GetAllRoomsQuery(IRoomQueryService roomQueryService)
-    {
-        public async Task<Result<IReadOnlyList<GetAllRoomsResponse>>> GetAllRoomsAsync(CancellationToken ct = default)
-        {
-            var rooms = await roomQueryService.GetAllRoomsAsync(ct);
-            return Result<IReadOnlyList<GetAllRoomsResponse>>.Ok(rooms);
-        }
-    }
+    public class GetAllRoomsQuery : IRequest<Result<IReadOnlyList<GetAllRoomsResponse>>>;
+    
 }
