@@ -9,7 +9,7 @@ namespace HotelBooking.UseCases.Profiles
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<ReservationRoom, GetAllReservationRoomsResponse>()
-                .Map(dest => dest.Room, src => src.Room.RoomNumber)
+                .Map(dest => dest.Room, src => new[] {$"Id: {src.Room.Id.ToString()}" , $"Room Number: { src.Room.RoomNumber }"})
                 .Map(dest => dest.Reservation, src => src.Reservation.GuestFullName);
         }
     }

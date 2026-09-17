@@ -2,6 +2,6 @@
 
 namespace HotelBooking.UseCases.Rooms.DTOs
 {
-    public record GetAllRoomsResponse(int Id, string RoomType, string RoomNumber, int Capacity, string Hotel, IReadOnlyList<ReservationRoom> ReservationRooms);
+    public record GetAllRoomsResponse(int Id, string RoomType, string RoomNumber, int Capacity, string Hotel, bool IsAvailable);
 
 }

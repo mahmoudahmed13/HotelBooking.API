@@ -13,12 +13,24 @@ namespace HotelBooking.UseCases.Profiles
             config.NewConfig<Room, GetAllRoomsResponse>()
                 .Map(dest => dest.RoomType, src => src.RoomType.ToString())
                 .Map(dest => dest.Hotel, src => src.Hotel.Name)
-                .Map(dest => dest.ReservationRooms, src => src.ReservationRooms.ToList());
+                .Map(dest => dest.IsAvailable, src => !src.ReservationRooms.Any(
+                    rr => rr.Reservation != null &&
+                    (rr.Reservation.Status == ReservationStatus.Confirmed ||
+                     rr.Reservation.Status == ReservationStatus.Pending ||
+                     rr.Reservation.Status == ReservationStatus.CheckedIn)
+                    && rr.Reservation.CheckOutDate >= DateOnly.FromDateTime(DateTime.UtcNow)));
 
             config.NewConfig<Room, GetRoomByIdResponse>()
                 .Map(dest => dest.RoomType, src => src.RoomType.ToString())
                 .Map(dest => dest.Hotel, src => src.Hotel.Name)
-                .Map(dest => dest.ReservationRooms, src => src.ReservationRooms.ToList());
+                .Map(dest => dest.GuestName, src => src.ReservationRooms
+                    .Where(rr => rr.Reservation != null &&
+                                 (rr.Reservation.Status == ReservationStatus.Confirmed ||
+                                  rr.Reservation.Status == ReservationStatus.Pending ||
+                                  rr.Reservation.Status == ReservationStatus.CheckedIn) &&
+                                 rr.Reservation.CheckOutDate >= DateOnly.FromDateTime(DateTime.UtcNow))
+                    .Select(rr => rr.Reservation.GuestFullName)
+                    .FirstOrDefault());
         }
     }
 }

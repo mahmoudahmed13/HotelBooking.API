@@ -1,5 +1,6 @@
 ﻿using HotelBooking.UseCases.Rooms.DTOs;
 using HotelBooking.UseCases.Rooms.Queries;
+using HotelBooking.UseCases.Rooms.Specifications;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +10,9 @@ namespace HotelBooking.API.Controllers.V1
     public class RoomsController(IMediator mediator) : ApiControllerBase
     {
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<GetAllRoomsResponse>>> GetAllRooms(CancellationToken ct)
+        public async Task<ActionResult<PaginatedResult<GetAllRoomsResponse>>> GetAllRooms([FromQuery] RoomQueryParams queryParams,CancellationToken ct)
         {
-            var result = await mediator.Send(new GetAllRoomsQuery(), ct);
+            var result = await mediator.Send(new GetAllRoomsQuery(queryParams), ct);
             return ToActionResult(result);
         }
 

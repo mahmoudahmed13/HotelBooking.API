@@ -4,7 +4,7 @@ using MediatR;
 
 namespace HotelBooking.UseCases.ReservationRooms.Queries
 {
-    public record GetAllReservationRoomsQuery : IRequest<Result<IReadOnlyList<GetAllReservationRoomsResponse>>>;
+    public record GetAllReservationRoomsQuery(int? reservationId, int? roomId, string? searchValue) : IRequest<Result<IReadOnlyList<GetAllReservationRoomsResponse>>>;
 
     
 }

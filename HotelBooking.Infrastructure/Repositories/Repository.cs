@@ -1,4 +1,6 @@
-﻿using HotelBooking.Domain.Entities;
+﻿using Ardalis.Specification;
+using Ardalis.Specification.EntityFrameworkCore;
+using HotelBooking.Domain.Entities;
 using HotelBooking.Domain.Repositories;
 using HotelBooking.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -17,5 +19,15 @@ namespace HotelBooking.Infrastructure.Repositories
         public async Task<TEntity?> GetByIdAsync(TKey id, CancellationToken ct = default)
             => await dbContext.Set<TEntity>().FindAsync(id, ct);
 
+        public async Task<TEntity?> GetByIdAsync(ISpecification<TEntity> spec, CancellationToken ct = default)
+            => await SpecificationEvaluator.Default.GetQuery(dbContext.Set<TEntity>(), spec)
+            .FirstOrDefaultAsync(ct);
+
+        public async Task<IReadOnlyList<TEntity>> GetAllAsync(ISpecification<TEntity> specification, CancellationToken ct = default)
+            => await SpecificationEvaluator.Default.GetQuery(dbContext.Set<TEntity>(), specification)
+            .ToListAsync(ct);
+        public async Task<int> CountAsync(ISpecification<TEntity> spec, CancellationToken ct = default)
+            => await SpecificationEvaluator.Default.GetQuery(dbContext.Set<TEntity>(), spec, evaluateCriteriaOnly: true)
+            .CountAsync(ct);
     }
 }
