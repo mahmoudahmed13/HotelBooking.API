@@ -1,4 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using HotelBooking.UseCases.Hotels.Queries;
+using HotelBooking.UseCases.ReservationRooms.Queries;
+using HotelBooking.UseCases.Reservations.Queries;
+using HotelBooking.UseCases.Rooms.Queries;
+using Mapster;
+using MapsterMapper;
+using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace HotelBooking.UseCases
 {
@@ -6,6 +13,15 @@ namespace HotelBooking.UseCases
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            var config = TypeAdapterConfig.GlobalSettings;
+            config.Scan(Assembly.GetExecutingAssembly());
+
+            services.AddSingleton(config);
+            services.AddScoped<IMapper, ServiceMapper>();
+
+            
+            // UseCases/DependencyInjection.cs
+            services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
             return services;
         }
     }

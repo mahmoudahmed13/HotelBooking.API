@@ -1,10 +1,12 @@
-﻿using HotelBooking.Domain.Entities.Enums;
+﻿using HotelBooking.Domain.Common;
+using HotelBooking.Domain.Entities.Enums;
 
 namespace HotelBooking.Domain.Entities
 {
     public class Reservation : BaseEntity<int>
     {
-        public const int MaxNameLengh = 100;
+        public const int MaxNameLength = 100;
+
         public DateOnly BookingDate { get; private set; }
         public DateOnly CheckInDate { get; private set; }
         public DateOnly CheckOutDate { get; private set; }
@@ -19,9 +21,6 @@ namespace HotelBooking.Domain.Entities
         public ICollection<ReservationRoom> ReservationRooms { get; private set; } = [];
         public ICollection<Payment> Payments { get; private set; } = [];
 
-        // EF Core needs a parameterless constructor to materialize entities from the
-        // database. It can be private - EF Core can still use it via reflection,
-        // and no application code outside this class can call it.
         private Reservation()
         {
         }
@@ -36,17 +35,24 @@ namespace HotelBooking.Domain.Entities
             string guestEmail,
             string guestPhone)
         {
-            SetCheckInAndOutDate(checkInDate, checkOutDate);
-            SetTotalPrice(totalPrice);
-            SetNumberOfAdults(numberOfAdults);
-            SetNumberOfChildren(numberOfChildren);
-            SetGuestFullName(guestFullName);
-            SetGuestEmail(guestEmail);
+            CheckInDate = checkInDate;
+            CheckOutDate = checkOutDate;
+            TotalPrice = totalPrice;
+            NumberOfAdults = numberOfAdults;
+            NumberOfChildren = numberOfChildren;
+            GuestFullName = guestFullName;
+            GuestEmail = guestEmail;
             GuestPhone = guestPhone;
             BookingDate = DateOnly.FromDateTime(DateTime.UtcNow);
             Status = ReservationStatus.Pending;
         }
-        public static Reservation Create(DateOnly checkInDate,
+
+        // The only public entry point for creating a Reservation.
+        // Validates everything up front, collects ALL failures (not just the
+        // first one) via Result.Combine, and only constructs the entity once
+        // every rule has passed.
+        public static Result<Reservation> Create(
+            DateOnly checkInDate,
             DateOnly checkOutDate,
             decimal totalPrice,
             int numberOfAdults,
@@ -55,7 +61,19 @@ namespace HotelBooking.Domain.Entities
             string guestEmail,
             string guestPhone)
         {
-            return new Reservation(
+            var validation = Result.Combine(
+                ValidateCheckInAndOutDate(checkInDate, checkOutDate),
+                ValidateTotalPrice(totalPrice),
+                ValidateNumberOfAdults(numberOfAdults),
+                ValidateNumberOfChildren(numberOfChildren),
+                ValidateGuestFullName(guestFullName),
+                ValidateGuestEmail(guestEmail),
+                ValidateGuestPhone(guestPhone));
+
+            if (validation.IsFailure)
+                return Result<Reservation>.Fail(validation.Errors);
+
+            var reservation = new Reservation(
                 checkInDate,
                 checkOutDate,
                 totalPrice,
@@ -64,66 +82,90 @@ namespace HotelBooking.Domain.Entities
                 guestFullName,
                 guestEmail,
                 guestPhone);
+
+            return reservation;
         }
-        private void SetCheckInAndOutDate(DateOnly checkInDate, DateOnly checkOutDate)
+
+        private static Result ValidateCheckInAndOutDate(DateOnly checkInDate, DateOnly checkOutDate)
         {
             if (checkOutDate <= checkInDate)
-                throw new ArgumentException("Check-out date must be after check-in date.");
-            if (checkInDate >= DateOnly.FromDateTime(DateTime.UtcNow))
-                throw new ArgumentException("Check In date must be in the present or future");
-            CheckInDate = checkInDate;
-            CheckOutDate = checkOutDate;
-        }
-        private void SetNumberOfChildren(int numberOfChildren)
-        {
-            if (numberOfChildren < 0)
-                throw new ArgumentException("Number of children cannot be negative.");
-            NumberOfChildren = numberOfChildren;
+                return Error.Failure("Check-out date must be after check-in date.");
 
-        }
-        private void SetNumberOfAdults(int numberOfAdults)
-        {
+            if (checkInDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                return Error.Failure("Check-in date must be in the present or future.");
 
-            if (numberOfAdults < 1)
-                throw new ArgumentException("A reservation must have at least one adult.");
-            NumberOfAdults = numberOfAdults;
+            return Result.Ok();
         }
-        private void SetGuestFullName(string guestFullName)
-        {
-            if (string.IsNullOrWhiteSpace(guestFullName))
-                throw new ArgumentException("Guest full name is required.");
-            if (guestFullName.Length > MaxNameLengh)
-                throw new ArgumentException($"Guest full name can not exeed {MaxNameLengh} characters.");
-            GuestFullName = guestFullName;
-        }
-        private void SetGuestEmail(string guestEmail)
-        {
-            if (string.IsNullOrWhiteSpace(guestEmail) || !guestEmail.Contains('@'))
-                throw new ArgumentException("A valid guest email is required.");
-            GuestEmail = guestEmail;
-        }
-        private void SetTotalPrice(decimal totalPrice)
+
+        private static Result ValidateTotalPrice(decimal totalPrice)
         {
             if (totalPrice < 0)
-                throw new ArgumentException("Total price cannot be negative.");
+                return Error.Failure("Total price cannot be negative.");
 
-            TotalPrice = totalPrice;
+            return Result.Ok();
         }
 
-        public void Confirm()
+        private static Result ValidateNumberOfAdults(int numberOfAdults)
+        {
+            if (numberOfAdults < 1)
+                return Error.Failure("A reservation must have at least one adult.");
+
+            return Result.Ok();
+        }
+
+        private static Result ValidateNumberOfChildren(int numberOfChildren)
+        {
+            if (numberOfChildren < 0)
+                return Error.Failure("Number of children cannot be negative.");
+
+            return Result.Ok();
+        }
+
+        private static Result ValidateGuestFullName(string guestFullName)
+        {
+            if (string.IsNullOrWhiteSpace(guestFullName))
+                return Error.Failure("Guest full name is required.");
+
+            if (guestFullName.Length > MaxNameLength)
+                return Error.Failure($"Guest full name cannot exceed {MaxNameLength} characters.");
+
+            return Result.Ok();
+        }
+
+        private static Result ValidateGuestEmail(string guestEmail)
+        {
+            if (string.IsNullOrWhiteSpace(guestEmail) || !guestEmail.Contains('@'))
+                return Error.Failure("A valid guest email is required.");
+
+            return Result.Ok();
+        }
+
+        private static Result ValidateGuestPhone(string guestPhone)
+        {
+            // Wasn't validated at all before - added for consistency with
+            // the other guest fields. Remove if phone is meant to be optional.
+            if (string.IsNullOrWhiteSpace(guestPhone))
+                return Error.Failure("Guest phone is required.");
+
+            return Result.Ok();
+        }
+
+        public Result Confirm()
         {
             if (Status != ReservationStatus.Pending)
-                throw new InvalidOperationException($"Cannot confirm a reservation with status '{Status}'.");
+                return Error.Failure($"Cannot confirm a reservation with status '{Status}'.");
 
             Status = ReservationStatus.Confirmed;
+            return Result.Ok();
         }
 
-        public void Cancel()
+        public Result Cancel()
         {
             if (Status == ReservationStatus.CheckedOut)
-                throw new InvalidOperationException("Cannot cancel a reservation that has already been checked out.");
+                return Error.Failure("Cannot cancel a reservation that has already been checked out.");
 
             Status = ReservationStatus.Cancelled;
+            return Result.Ok();
         }
     }
 }
